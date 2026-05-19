@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SnipLink | URL Shortener</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        body { background: #F3F4F6; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; max-width: 380px; text-align: center; }
+        h1 { color: #1F2937; font-size: 24px; margin-bottom: 5px; }
+        p { color: #6B7280; font-size: 14px; margin-bottom: 20px; }
+        
+        input { width: 100%; padding: 12px; border: 1px solid #E5E7EB; border-radius: 6px; margin-bottom: 12px; outline: none; transition: 0.2s; }
+        input:focus { border-color: #4F46E5; }
+        
+        button { width: 100%; background: #4F46E5; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:hover { background: #4338CA; }
+        button:disabled { background: #9CA3AF; cursor: not-allowed; }
+        
+        #result { margin-top: 20px; background: #ECFDF5; padding: 15px; border-radius: 6px; display: none; border: 1px solid #A7F3D0; }
+        #result a { display: block; color: #4F46E5; margin: 10px 0; font-weight: bold; word-break: break-all; text-decoration: none; }
+        #result a:hover { text-decoration: underline; }
+        
+        .copy-btn { background: white; color: #1F2937; border: 1px solid #E5E7EB; margin-top: 5px; }
+        .copy-btn:hover { background: #F3F4F6; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>SnipLink ✂️</h1>
+        <p>Paste a long URL to shorten it.</p>
+        
+        <input type="url" id="url" placeholder="https://example.com/long-link" required>
+        <button id="btn" onclick="shorten()">Shorten URL</button>
+        
+        <div id="result">
+            <span style="color:#047857;font-weight:bold;font-size:14px;">Success!</span>
+            <a href="#" id="link" target="_blank"></a>
+            <button class="copy-btn" onclick="copy()">Copy Link</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://127.0.0.1:8000";
+
+        async function shorten() {
+            const url = document.getElementById('url').value;
+            const btn = document.getElementById('btn');
+            const result = document.getElementById('result');
+            const link = document.getElementById('link');
+
+            if (!url) return alert("Please enter a URL.");
+
+            btn.disabled = true;
+            btn.innerText = "Processing...";
+            result.style.display = 'none';
+
+            try {
+                let res = await fetch(`${API_URL}/shorten`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ url })
+                });
+                
+                let data = await res.json();
+
+                if (res.ok) {
+                    link.href = link.innerText = `${API_URL}/${data.short_code}`;
+                    result.style.display = 'block';
+                } else {
+                    alert("Error: " + data.detail);
+                }
+            } catch (e) {
+                alert("Server offline. Is uvicorn running?");
+            }
+
+            btn.disabled = false;
+            btn.innerText = "Shorten URL";
+        }
+
+        function copy() {
+            navigator.clipboard.writeText(document.getElementById('link').innerText);
+            alert("Copied to clipboard!");
+        }
+    </script>
+</body>
+</html>
